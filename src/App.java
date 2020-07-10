@@ -8,48 +8,50 @@ public class App {
   static final int H = 20;
   static final int W = 10;
   static final int BLOCK_SIZE = 4;
-  static int delay = 100;
+  static int delay = 300;
   static int board[][] = new int[H + BLOCK_SIZE * 2][W + BLOCK_SIZE];
   static CharColor defaultColor = new CharColor(CharColor.WHITE, CharColor.BLACK);
   static Rectangle pos;
+  static int direction, shape;
   static java.util.List<Integer> sequence;
-  // I, O, Z, S, J, L, T
   // 좌측 모서리에 붙어있게끔 지정
   static int block[][][][] = new int[][][][] {
+      // I
       {{{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0},},
           {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
-          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
-          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},},
+          {{0, 0, 0, 0}, {1, 1, 1, 1}, {0, 0, 0, 0}, {0, 0, 0, 0},},},
 
+      // O
       {{{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
           {{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
           {{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
           {{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
-
-      {{{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},
-          {{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},
-          {{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},
-          {{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},},
-
+      // Z
+      {{{0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 0, 0},},
+          {{0, 1, 0, 0}, {1, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0}, {0, 0, 0, 0},},
+          {{0, 1, 0, 0}, {1, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0},},},
+      // S
       {{{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
           {{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
-
+          {{1, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},},
+      // J
       {{{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
-
+          {{0, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 1, 0}, {0, 0, 0, 0},},
+          {{1, 1, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 0, 1, 0}, {0, 0, 0, 0},},},
+      // L
       {{{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
-
+          {{0, 0, 0, 0}, {1, 1, 1, 0}, {1, 0, 0, 0}, {0, 0, 0, 0},},
+          {{1, 1, 0, 0}, {0, 1, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {0, 0, 1, 0}, {1, 1, 1, 0}, {0, 0, 0, 0},},},
+      // T
       {{{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
-          {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},}};
+          {{0, 1, 0, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {0, 1, 0, 0}, {1, 1, 1, 0}, {0, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 0, 0},},}};
 
   static {
     sequence = new ArrayList<>();
@@ -75,8 +77,6 @@ public class App {
           while (true) {
             Collections.shuffle(sequence);
             for (int i : sequence) {
-              // FIXME:
-              i = 0;
               pos = createBlock(i);
               if (chkDownTouch(pos)) {
                 System.out.println("GAME OVER!");
@@ -119,6 +119,10 @@ public class App {
               left(pos);
             else if (keyCode == InputChar.KEY_RIGHT)
               right(pos);
+            else if (keyCode == InputChar.KEY_UP)
+              rotate(pos);
+            else if (keyCode == InputChar.KEY_DOWN)
+              fall(pos);
           }
         }
       }
@@ -127,6 +131,43 @@ public class App {
     game.start();
     renderer.start();
     controller.start();
+  }
+
+  static void rotate(Rectangle r) {
+    if (chkRightTouch(r))
+      return;
+
+    direction = (direction + 1) % 4;
+    int nb[][] = block[shape][direction];
+    for (int i = 0; i < r.getHeight(); i++) {
+      int ci = r.getY() + i;
+      for (int j = 0; j < r.getWidth(); j++) {
+        int cj = r.getX() + j;
+        if (board[ci][cj] == 9)
+          board[ci][cj] = 0;
+        if (nb[i][j] == 1)
+          board[ci][cj] = 9;
+      }
+    }
+  }
+
+  static void fall(Rectangle r) {
+    
+  }
+
+  static boolean chkRotateTouch(Rectangle r) {
+    int nd = (direction + 1) % 4;
+    int nb[][] = block[shape][nd];
+    for (int i = 0; i < r.getHeight(); i++) {
+      int ci = r.getY() + i;
+      for (int j = 0; j < r.getWidth(); j++) {
+        int cj = r.getX() + j;
+        if (nb[ci][cj] == 1
+            && (ci >= H + BLOCK_SIZE || board[ci][cj] == 1 || cj >= W || board[ci][cj] == 1))
+          return false;
+      }
+    }
+    return true;
   }
 
   static void chkAndDelLine(Rectangle r) {
@@ -159,11 +200,13 @@ public class App {
       }
   }
 
-  static Rectangle createBlock(int shape) {
+  static Rectangle createBlock(int num) {
     final int START_X_POS = 4;
+    shape = num;
+    direction = 0;
     for (int i = 0; i < 4; i++)
       for (int j = 0; j < 4; j++)
-        if (block[shape][0][i][j] == 1)
+        if (block[shape][direction][i][j] == 1)
           board[i][j + START_X_POS] = 9;
 
     return new Rectangle(START_X_POS, 0, 4, 4);
