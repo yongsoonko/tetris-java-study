@@ -77,6 +77,8 @@ public class App {
           while (true) {
             Collections.shuffle(sequence);
             for (int i : sequence) {
+              // FIXME:
+              i = 0;
               pos = createBlock(i);
               if (chkDownTouch(pos)) {
                 System.out.println("GAME OVER!");
@@ -134,7 +136,7 @@ public class App {
   }
 
   static void rotate(Rectangle r) {
-    if (chkRightTouch(r))
+    if (chkRotateTouch(r))
       return;
 
     direction = (direction + 1) % 4;
@@ -152,7 +154,7 @@ public class App {
   }
 
   static void fall(Rectangle r) {
-    
+
   }
 
   static boolean chkRotateTouch(Rectangle r) {
@@ -162,12 +164,11 @@ public class App {
       int ci = r.getY() + i;
       for (int j = 0; j < r.getWidth(); j++) {
         int cj = r.getX() + j;
-        if (nb[ci][cj] == 1
-            && (ci >= H + BLOCK_SIZE || board[ci][cj] == 1 || cj >= W || board[ci][cj] == 1))
-          return false;
+        if (nb[i][j] == 1 && (ci >= H + BLOCK_SIZE || cj >= W || board[ci][cj] == 1))
+          return true;
       }
     }
-    return true;
+    return false;
   }
 
   static void chkAndDelLine(Rectangle r) {
@@ -230,11 +231,12 @@ public class App {
   }
 
   static boolean chkDownTouch(Rectangle r) {
+    int nb[][] = block[shape][direction];
     for (int j = 0; j < r.getWidth(); j++) {
       int cj = r.getX() + j;
       for (int i = r.getHeight() - 1; i >= 0; i--) {
         int ci = r.getY() + i;
-        if (board[ci][cj] == 9) {
+        if (nb[i][j] == 1) {
           if (ci + 1 >= H + BLOCK_SIZE || board[ci + 1][cj] == 1)
             return true;
           break;
@@ -245,11 +247,12 @@ public class App {
   }
 
   static boolean chkRightTouch(Rectangle r) {
+    int nb[][] = block[shape][direction];
     for (int i = r.getHeight() - 1; i >= 0; i--) {
       int ci = r.getY() + i;
       for (int j = r.getWidth() - 1; j >= 0; j--) {
         int cj = r.getX() + j;
-        if (board[ci][cj] == 9) {
+        if (nb[i][j] == 1) {
           if (cj + 1 >= W || board[ci][cj + 1] == 1)
             return true;
           break;
@@ -260,11 +263,12 @@ public class App {
   }
 
   static boolean chkLeftTouch(Rectangle r) {
+    int nb[][] = block[shape][direction];
     for (int i = 0; i < r.getHeight(); i++) {
       int ci = r.getY() + i;
       for (int j = 0; j < r.getWidth(); j++) {
         int cj = r.getX() + j;
-        if (board[ci][cj] == 9) {
+        if (nb[i][j] == 1) {
           if (cj - 1 < 0 || board[ci][cj - 1] == 1)
             return true;
           break;
