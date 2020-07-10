@@ -1,9 +1,8 @@
+import java.util.*;
 import jcurses.util.*;
 import jcurses.event.*;
 import jcurses.system.*;
 import jcurses.widgets.*;
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class App {
   static final int H = 20;
@@ -16,13 +15,41 @@ public class App {
   static java.util.List<Integer> sequence;
   // I, O, Z, S, J, L, T
   // 좌측 모서리에 붙어있게끔 지정
-  static int block[][][] = new int[][][] {{{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
-      {{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-      {{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},
-      {{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-      {{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-      {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
-      {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},}};
+  static int block[][][][] = new int[][][][] {
+      {{{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},},
+
+      {{{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
+
+      {{{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},
+          {{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},
+          {{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},
+          {{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 1, 0, 0}, {0, 1, 1, 0},},},
+
+      {{{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {0, 1, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
+
+      {{{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 1, 0, 0}, {0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
+
+      {{{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
+          {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},},
+
+      {{{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},
+          {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},},}};
 
   static {
     sequence = new ArrayList<>();
@@ -33,12 +60,23 @@ public class App {
   public static void main(String[] args) throws Exception {
     Toolkit.setEncoding("UTF-8");
 
+    // FIXME:
+    Arrays.fill(board[H + BLOCK_SIZE - 3], 1);
+    board[H + BLOCK_SIZE - 3][4] = 0;
+    Arrays.fill(board[H + BLOCK_SIZE - 2], 1);
+    board[H + BLOCK_SIZE - 2][4] = 0;
+    board[H + BLOCK_SIZE - 2][5] = 0;
+    Arrays.fill(board[H + BLOCK_SIZE - 1], 1);
+    board[H + BLOCK_SIZE - 1][4] = 0;
+
     Thread game = new Thread() {
       public void run() {
         try {
           while (true) {
             Collections.shuffle(sequence);
             for (int i : sequence) {
+              // FIXME:
+              i = 0;
               pos = createBlock(i);
               if (chkDownTouch(pos)) {
                 System.out.println("GAME OVER!");
@@ -48,7 +86,7 @@ public class App {
                 down(pos);
                 sleep(delay);
               }
-              bindBlock(pos);
+              chkAndDelLine(bindBlock(pos));
             }
             System.out.println();
           }
@@ -91,28 +129,61 @@ public class App {
     controller.start();
   }
 
-  // TODO: 한줄이 가득 찼는지 확인
-  static boolean chkLine() {
-    return true;
+  static void chkAndDelLine(Rectangle r) {
+    boolean flag = false;
+    for (int i = 0; i < r.getHeight(); i++) {
+      int ci = r.getY() + i, j;
+      for (j = 0; j < W; j++) {
+        if (board[ci][j] == 0)
+          break;
+      }
+      // 한줄 가득 찼음
+      if (j == W) {
+        flag = true;
+        for (j = 0; j < W; j++)
+          board[ci][j] = 0;
+      }
+    }
+    // 파괴 후처리
+    if (flag)
+      for (int j = 0; j < W; j++) {
+        int p = r.getY() + r.getHeight() - 1;
+        for (int i = p; i >= 0; i--)
+          if (board[i][j] == 1) {
+            if (p > i) {
+              board[p][j] = board[i][j];
+              board[i][j] = 0;
+            }
+            p--;
+          }
+      }
   }
 
   static Rectangle createBlock(int shape) {
     final int START_X_POS = 4;
     for (int i = 0; i < 4; i++)
       for (int j = 0; j < 4; j++)
-        if (block[shape][i][j] == 1)
+        if (block[shape][0][i][j] == 1)
           board[i][j + START_X_POS] = 9;
 
     return new Rectangle(START_X_POS, 0, 4, 4);
   }
 
-  static void bindBlock(Rectangle r) {
+  static Rectangle bindBlock(Rectangle r) {
+    int min = (int) 1e9, max = (int) -1e9;
     for (int i = 0; i < r.getHeight(); i++)
       for (int j = 0; j < r.getWidth(); j++) {
         int ci = r.getY() + i, cj = r.getX() + j;
-        if (board[ci][cj] == 9)
+        if (board[ci][cj] == 9) {
           board[ci][cj] = 1;
+
+          if (min > ci)
+            min = ci;
+          if (max < ci)
+            max = ci;
+        }
       }
+    return new Rectangle(0, min, 0, max - min + 1);
   }
 
   static boolean chkDownTouch(Rectangle r) {
