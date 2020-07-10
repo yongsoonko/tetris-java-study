@@ -1,19 +1,25 @@
 import java.util.*;
 import jcurses.util.*;
-import jcurses.event.*;
 import jcurses.system.*;
-import jcurses.widgets.*;
 
 public class App {
   static final int H = 20;
   static final int W = 10;
   static final int BLOCK_SIZE = 4;
-  static int delay = 300;
+  static int delay = 250;
   static int board[][] = new int[H + BLOCK_SIZE * 2][W + BLOCK_SIZE];
-  static CharColor defaultColor = new CharColor(CharColor.WHITE, CharColor.BLACK);
   static Rectangle pos;
   static int direction, shape;
   static java.util.List<Integer> sequence;
+  static CharColor whiteColor = new CharColor(CharColor.WHITE, CharColor.NORMAL);
+  static CharColor blackColor = new CharColor(CharColor.BLACK, CharColor.NORMAL);
+  static CharColor blockColors[] = {new CharColor(CharColor.BLUE, CharColor.NORMAL),
+      new CharColor(CharColor.BOLD, CharColor.NORMAL),
+      new CharColor(CharColor.CYAN, CharColor.NORMAL),
+      new CharColor(CharColor.GREEN, CharColor.NORMAL),
+      new CharColor(CharColor.MAGENTA, CharColor.NORMAL),
+      new CharColor(CharColor.RED, CharColor.NORMAL),
+      new CharColor(CharColor.YELLOW, CharColor.NORMAL),};
   // 좌측 모서리에 붙어있게끔 지정
   static int block[][][][] = new int[][][][] {
       // I
@@ -60,7 +66,12 @@ public class App {
   }
 
   public static void main(String[] args) throws Exception {
+    Toolkit.init();
     Toolkit.setEncoding("UTF-8");
+
+    // 빈칸으로 초기화
+    for (int i = 0; i < H + BLOCK_SIZE; i++)
+      Arrays.fill(board[i], -1);
 
     Thread game = new Thread() {
       public void run() {
@@ -71,13 +82,18 @@ public class App {
               pos = createBlock(i);
               if (chkDownTouch(pos)) {
                 System.out.println("GAME OVER!");
-                Runtime.getRuntime().exit(0);
+                System.exit(0);
               }
               while (!chkDownTouch(pos)) {
                 down(pos);
                 sleep(delay);
               }
-              chkAndDelLine(bindBlock(pos));
+              int dis;
+              Rectangle range = bindBlock(pos);
+              if ((dis = chkAndDelLine(range)) > 0) {
+                sleep(delay);
+                putDownBlock(range, dis);
+              }
             }
           }
         } catch (InterruptedException e) {
@@ -90,7 +106,7 @@ public class App {
       public void run() {
         try {
           while (true) {
-            sleep(100);
+            sleep(1);
             render();
           }
         } catch (InterruptedException e) {
@@ -123,88 +139,6 @@ public class App {
     controller.start();
   }
 
-  static void rotate(Rectangle r) {
-    if (chkRotateTouch(r))
-      return;
-
-    direction = (direction + 1) % 4;
-    int nb[][] = block[shape][direction];
-    for (int i = 0; i < r.getHeight(); i++) {
-      int ci = r.getY() + i;
-      for (int j = 0; j < r.getWidth(); j++) {
-        int cj = r.getX() + j;
-        if (board[ci][cj] == 9)
-          board[ci][cj] = 0;
-        if (nb[i][j] == 1)
-          board[ci][cj] = 9;
-      }
-    }
-  }
-
-  static void fall(Rectangle r) {
-    int nb[][] = block[shape][direction], d = 0;
-
-    Rectangle nr = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight());
-    while (!chkDownTouch(nr))
-      nr.setY(r.getY() + ++d);
-
-    for (int i = r.getHeight() - 1; i >= 0; i--) {
-      int ci = r.getY() + i;
-      for (int j = 0; j < r.getWidth(); j++) {
-        int cj = r.getX() + j;
-        if (nb[i][j] == 1) {
-          board[ci][cj] = 0;
-          board[ci + d][cj] = 9;
-        }
-      }
-    }
-    pos = nr;
-  }
-
-  static boolean chkRotateTouch(Rectangle r) {
-    int nd = (direction + 1) % 4;
-    int nb[][] = block[shape][nd];
-    for (int i = 0; i < r.getHeight(); i++) {
-      int ci = r.getY() + i;
-      for (int j = 0; j < r.getWidth(); j++) {
-        int cj = r.getX() + j;
-        if (nb[i][j] == 1 && (ci >= H + BLOCK_SIZE || cj >= W || board[ci][cj] == 1))
-          return true;
-      }
-    }
-    return false;
-  }
-
-  static void chkAndDelLine(Rectangle r) {
-    boolean flag = false;
-    for (int i = 0; i < r.getHeight(); i++) {
-      int ci = r.getY() + i, j;
-      for (j = 0; j < W; j++) {
-        if (board[ci][j] == 0)
-          break;
-      }
-      // 한줄 가득 찼음
-      if (j == W) {
-        flag = true;
-        for (j = 0; j < W; j++)
-          board[ci][j] = 0;
-      }
-    }
-    // 파괴 후처리
-    if (flag)
-      for (int j = 0; j < W; j++) {
-        int p = r.getY() + r.getHeight() - 1;
-        for (int i = p; i >= 0; i--)
-          if (board[i][j] == 1) {
-            if (p > i) {
-              board[p][j] = board[i][j];
-              board[i][j] = 0;
-            }
-            p--;
-          }
-      }
-  }
-
   static Rectangle createBlock(int num) {
     final int START_X_POS = 4;
     shape = num;
@@ -223,7 +157,7 @@ public class App {
       for (int j = 0; j < r.getWidth(); j++) {
         int ci = r.getY() + i, cj = r.getX() + j;
         if (board[ci][cj] == 9) {
-          board[ci][cj] = 1;
+          board[ci][cj] = shape;
 
           if (min > ci)
             min = ci;
@@ -234,6 +168,35 @@ public class App {
     return new Rectangle(0, min, 0, max - min + 1);
   }
 
+  static int chkAndDelLine(Rectangle r) {
+    int dis = 0;
+    for (int i = 0; i < r.getHeight(); i++) {
+      int ci = r.getY() + i, j;
+      for (j = 0; j < W; j++) {
+        if (board[ci][j] == -1)
+          break;
+      }
+      // 한줄 가득 찼음
+      if (j == W) {
+        dis++;
+        for (j = 0; j < W; j++)
+          board[ci][j] = -2;
+      }
+    }
+    return dis;
+  }
+
+  static void putDownBlock(Rectangle r, int dis) {
+    for (int j = 0; j < W; j++) {
+      for (int i = r.getY() + r.getHeight() - 1; i >= 0; i--)
+        if (0 <= board[i][j] && board[i][j] < block.length) {
+          board[i + dis][j] = board[i][j];
+          board[i][j] = -1;
+        } else if (board[i][j] == -2)
+          board[i][j] = -1;
+    }
+  }
+
   static boolean chkDownTouch(Rectangle r) {
     int nb[][] = block[shape][direction];
     for (int j = 0; j < r.getWidth(); j++) {
@@ -241,7 +204,8 @@ public class App {
       for (int i = r.getHeight() - 1; i >= 0; i--) {
         int ci = r.getY() + i;
         if (nb[i][j] == 1) {
-          if (ci + 1 >= H + BLOCK_SIZE || board[ci + 1][cj] == 1)
+          if (ci + 1 >= H + BLOCK_SIZE
+              || (0 <= board[ci + 1][cj] && board[ci + 1][cj] < block.length))
             return true;
           break;
         }
@@ -257,7 +221,7 @@ public class App {
       for (int j = r.getWidth() - 1; j >= 0; j--) {
         int cj = r.getX() + j;
         if (nb[i][j] == 1) {
-          if (cj + 1 >= W || board[ci][cj + 1] == 1)
+          if (cj + 1 >= W || (0 <= board[ci][cj + 1] && board[ci][cj + 1] < block.length))
             return true;
           break;
         }
@@ -273,10 +237,25 @@ public class App {
       for (int j = 0; j < r.getWidth(); j++) {
         int cj = r.getX() + j;
         if (nb[i][j] == 1) {
-          if (cj - 1 < 0 || board[ci][cj - 1] == 1)
+          if (cj - 1 < 0 || (0 <= board[ci][cj - 1] && board[ci][cj - 1] < block.length))
             return true;
           break;
         }
+      }
+    }
+    return false;
+  }
+
+  static boolean chkRotateTouch(Rectangle r) {
+    int nd = (direction + 1) % 4;
+    int nb[][] = block[shape][nd];
+    for (int i = 0; i < r.getHeight(); i++) {
+      int ci = r.getY() + i;
+      for (int j = 0; j < r.getWidth(); j++) {
+        int cj = r.getX() + j;
+        if (nb[i][j] == 1 && (ci >= H + BLOCK_SIZE || cj >= W
+            || (0 <= board[ci][cj] && board[ci][cj] < block.length)))
+          return true;
       }
     }
     return false;
@@ -290,7 +269,7 @@ public class App {
         int ci = r.getY() + i;
         if (board[ci][cj] == 9) {
           board[ci + 1][cj] = board[ci][cj];
-          board[ci][cj] = 0;
+          board[ci][cj] = -1;
         }
       }
     }
@@ -308,7 +287,7 @@ public class App {
         int cj = r.getX() + j;
         if (board[ci][cj] == 9) {
           board[ci][cj + 1] = board[ci][cj];
-          board[ci][cj] = 0;
+          board[ci][cj] = -1;
         }
       }
     }
@@ -326,7 +305,7 @@ public class App {
         int cj = r.getX() + j;
         if (board[ci][cj] == 9) {
           board[ci][cj - 1] = board[ci][cj];
-          board[ci][cj] = 0;
+          board[ci][cj] = -1;
         }
       }
     }
@@ -334,18 +313,59 @@ public class App {
     r.setX(r.getX() - 1);
   }
 
-  static void render() {
-    CharColor red = new CharColor(CharColor.RED, CharColor.WHITE);
+  static void rotate(Rectangle r) {
+    if (chkRotateTouch(r))
+      return;
 
-    for (int i = BLOCK_SIZE; i < H + BLOCK_SIZE; i++) {
-      StringBuffer sb = new StringBuffer();
-      for (int j = 0; j < W; j++) {
-        if (board[i][j] != 0)
-          sb.append("# ");
-        else
-          sb.append("  ");
+    direction = (direction + 1) % 4;
+    int nb[][] = block[shape][direction];
+    for (int i = 0; i < r.getHeight(); i++) {
+      int ci = r.getY() + i;
+      for (int j = 0; j < r.getWidth(); j++) {
+        int cj = r.getX() + j;
+        if (board[ci][cj] == 9)
+          board[ci][cj] = -1;
+        if (nb[i][j] == 1)
+          board[ci][cj] = 9;
       }
-      Toolkit.printString(sb.toString(), 0, i, defaultColor);
     }
+  }
+
+  static void fall(Rectangle r) {
+    int nb[][] = block[shape][direction], d = 0;
+
+    Rectangle nr = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+    while (!chkDownTouch(nr))
+      nr.setY(r.getY() + ++d);
+
+    for (int i = r.getHeight() - 1; i >= 0; i--) {
+      int ci = r.getY() + i;
+      for (int j = 0; j < r.getWidth(); j++) {
+        int cj = r.getX() + j;
+        if (nb[i][j] == 1) {
+          board[ci][cj] = -1;
+          board[ci + d][cj] = 9;
+        }
+      }
+    }
+    pos = nr;
+  }
+
+  static void render() {
+    Rectangle clip = new Rectangle(0, BLOCK_SIZE, W * 2, H);
+    Toolkit.startPainting();
+    for (int i = BLOCK_SIZE; i < H + BLOCK_SIZE; i++) {
+      for (int j = 0; j < W; j++) {
+        if (0 <= board[i][j] && board[i][j] < block.length)
+          Toolkit.drawRectangle(j * 2, i, 2, 1, blockColors[board[i][j]]);
+        else if (board[i][j] == 9)
+          Toolkit.drawRectangle(j * 2, i, 2, 1, blockColors[shape]);
+        else if (board[i][j] == -1)
+          Toolkit.drawRectangle(j * 2, i, 2, 1, whiteColor);
+        else if (board[i][j] == -2)
+          Toolkit.drawRectangle(j * 2, i, 2, 1, blackColor);
+      }
+    }
+    Toolkit.endPainting();
   }
 }
