@@ -62,23 +62,12 @@ public class App {
   public static void main(String[] args) throws Exception {
     Toolkit.setEncoding("UTF-8");
 
-    // FIXME:
-    Arrays.fill(board[H + BLOCK_SIZE - 3], 1);
-    board[H + BLOCK_SIZE - 3][4] = 0;
-    Arrays.fill(board[H + BLOCK_SIZE - 2], 1);
-    board[H + BLOCK_SIZE - 2][4] = 0;
-    board[H + BLOCK_SIZE - 2][5] = 0;
-    Arrays.fill(board[H + BLOCK_SIZE - 1], 1);
-    board[H + BLOCK_SIZE - 1][4] = 0;
-
     Thread game = new Thread() {
       public void run() {
         try {
           while (true) {
             Collections.shuffle(sequence);
             for (int i : sequence) {
-              // FIXME:
-              i = 0;
               pos = createBlock(i);
               if (chkDownTouch(pos)) {
                 System.out.println("GAME OVER!");
@@ -90,7 +79,6 @@ public class App {
               }
               chkAndDelLine(bindBlock(pos));
             }
-            System.out.println();
           }
         } catch (InterruptedException e) {
           e.printStackTrace();
@@ -154,7 +142,23 @@ public class App {
   }
 
   static void fall(Rectangle r) {
+    int nb[][] = block[shape][direction], d = 0;
 
+    Rectangle nr = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+    while (!chkDownTouch(nr))
+      nr.setY(r.getY() + ++d);
+
+    for (int i = r.getHeight() - 1; i >= 0; i--) {
+      int ci = r.getY() + i;
+      for (int j = 0; j < r.getWidth(); j++) {
+        int cj = r.getX() + j;
+        if (nb[i][j] == 1) {
+          board[ci][cj] = 0;
+          board[ci + d][cj] = 9;
+        }
+      }
+    }
+    pos = nr;
   }
 
   static boolean chkRotateTouch(Rectangle r) {
@@ -331,15 +335,16 @@ public class App {
   }
 
   static void render() {
+    CharColor red = new CharColor(CharColor.RED, CharColor.WHITE);
+
     for (int i = BLOCK_SIZE; i < H + BLOCK_SIZE; i++) {
       StringBuffer sb = new StringBuffer();
       for (int j = 0; j < W; j++) {
         if (board[i][j] != 0)
           sb.append("# ");
         else
-          sb.append(". ");
+          sb.append("  ");
       }
-      sb.append('\n');
       Toolkit.printString(sb.toString(), 0, i, defaultColor);
     }
   }
