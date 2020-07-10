@@ -2,6 +2,8 @@ import jcurses.util.*;
 import jcurses.event.*;
 import jcurses.system.*;
 import jcurses.widgets.*;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class App {
   static final int H = 20;
@@ -11,7 +13,7 @@ public class App {
   static int board[][] = new int[H + BLOCK_SIZE * 2][W + BLOCK_SIZE];
   static CharColor defaultColor = new CharColor(CharColor.WHITE, CharColor.BLACK);
   static Rectangle pos;
-
+  static java.util.List<Integer> sequence;
   // I, O, Z, S, J, L, T
   // 좌측 모서리에 붙어있게끔 지정
   static int block[][][] = new int[][][] {{{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0},},
@@ -22,24 +24,46 @@ public class App {
       {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}, {0, 0, 0, 0},},
       {{0, 0, 0, 0}, {1, 1, 1, 0}, {0, 1, 0, 0}, {0, 0, 0, 0},}};
 
+  static {
+    sequence = new ArrayList<>();
+    for (int i = 0; i < block.length; i++)
+      sequence.add(i);
+  }
+
   public static void main(String[] args) throws Exception {
     Toolkit.setEncoding("UTF-8");
 
     Thread game = new Thread() {
       public void run() {
         try {
-          for (int i = 0; i < block.length; i++) {
-            pos = createBlock(i);
-            while (true) {
-              sleep(delay);
-              if (!chkDownTouch(pos))
-                down(pos);
-              else {
-                bindBlock(pos);
-                break;
+          while (true) {
+            Collections.shuffle(sequence);
+            for (int i : sequence) {
+              pos = createBlock(i);
+              if (chkDownTouch(pos)) {
+                System.out.println("GAME OVER!");
+                Runtime.getRuntime().exit(0);
               }
-              render();
+              while (!chkDownTouch(pos)) {
+                down(pos);
+                sleep(delay);
+              }
+              bindBlock(pos);
             }
+            System.out.println();
+          }
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    };
+
+    Thread renderer = new Thread() {
+      public void run() {
+        try {
+          while (true) {
+            sleep(100);
+            render();
           }
         } catch (InterruptedException e) {
           e.printStackTrace();
@@ -63,6 +87,7 @@ public class App {
     };
 
     game.start();
+    renderer.start();
     controller.start();
   }
 
@@ -72,12 +97,13 @@ public class App {
   }
 
   static Rectangle createBlock(int shape) {
+    final int START_X_POS = 4;
     for (int i = 0; i < 4; i++)
       for (int j = 0; j < 4; j++)
         if (block[shape][i][j] == 1)
-          board[i][j + 3] = 9;
+          board[i][j + START_X_POS] = 9;
 
-    return new Rectangle(3, 0, 4, 4);
+    return new Rectangle(START_X_POS, 0, 4, 4);
   }
 
   static void bindBlock(Rectangle r) {
