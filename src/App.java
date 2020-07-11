@@ -8,10 +8,12 @@ public class App {
   static final int BLOCK_SIZE = 4;
   static final int NEXT_BLOCK_START_Y_POS = BLOCK_SIZE;
   static final int NEXT_BLOCK_START_X_POS = W + BLOCK_SIZE;
+  static final int POINT_START_Y_POS = BLOCK_SIZE * 2 + 1;
+  static final int POINT_START_X_POS = (W + BLOCK_SIZE) * 2;
   static final int DELAY = 250;
   static int board[][] = new int[H + BLOCK_SIZE * 2][W + BLOCK_SIZE];
   static Rectangle pos;
-  static int direction, shape;
+  static int direction, shape, point, drop;
   static List<Integer> sequence;
   static Queue<Integer> bag = new LinkedList<>();
   static CharColor whiteColor = new CharColor(CharColor.WHITE, CharColor.NORMAL);
@@ -66,15 +68,15 @@ public class App {
     sequence = new ArrayList<>();
     for (int i = 0; i < block.length; i++)
       sequence.add(i);
+
+    // 빈칸으로 초기화
+    for (int i = 0; i < H + BLOCK_SIZE; i++)
+      Arrays.fill(board[i], -1);
   }
 
   public static void main(final String[] args) throws Exception {
     Toolkit.init();
     Toolkit.setEncoding("UTF-8");
-
-    // 빈칸으로 초기화
-    for (int i = 0; i < H + BLOCK_SIZE; i++)
-      Arrays.fill(board[i], -1);
 
     final Thread game = new Thread() {
       public void run() {
@@ -176,6 +178,7 @@ public class App {
 
   static boolean chkAndDelLine(final Rectangle r) {
     boolean flag = false;
+    int cnt = 0;
     for (int i = 0; i < r.getHeight(); i++) {
       final int ci = r.getY() + i;
       int j;
@@ -186,10 +189,14 @@ public class App {
       // 한줄 가득 찼음
       if (j == W) {
         flag = true;
+        cnt++;
         for (j = 0; j < W; j++)
           board[ci][j] = -2;
       }
     }
+    if (cnt > 0)
+      point += cnt * 10 + (drop >= 10 ? 5 : (drop >= 5 ? 3 : (drop >= 1 ? 1 : 0)));
+    drop = 0;
     return flag;
   }
 
@@ -365,12 +372,14 @@ public class App {
         }
       }
     }
+    drop = nr.getY() - r.getY();
     pos = nr;
   }
 
   static void render() {
     Toolkit.startPainting();
 
+    // 미노 가방
     int nb[][] = block[bag.peek()][0];
     for (int i = 0; i < BLOCK_SIZE; i++) {
       int ci = NEXT_BLOCK_START_Y_POS + i;
@@ -383,6 +392,10 @@ public class App {
       }
     }
 
+    // 점수
+    Toolkit.printString("Point : " + point, POINT_START_X_POS, POINT_START_Y_POS, whiteColor);
+
+    // 보드
     for (int i = BLOCK_SIZE; i < H + BLOCK_SIZE; i++) {
       for (int j = 0; j < W; j++) {
         if (0 <= board[i][j] && board[i][j] < block.length)
