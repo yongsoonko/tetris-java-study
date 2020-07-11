@@ -88,11 +88,10 @@ public class App {
                 down(pos);
                 sleep(delay);
               }
-              int dis;
               Rectangle range = bindBlock(pos);
-              if ((dis = chkAndDelLine(range)) > 0) {
+              if (chkAndDelLine(range)) {
                 sleep(delay);
-                putDownBlock(range, dis);
+                putDownBlock(range);
               }
             }
           }
@@ -106,7 +105,7 @@ public class App {
       public void run() {
         try {
           while (true) {
-            sleep(1);
+            sleep(25);
             render();
           }
         } catch (InterruptedException e) {
@@ -153,10 +152,12 @@ public class App {
 
   static Rectangle bindBlock(Rectangle r) {
     int min = (int) 1e9, max = (int) -1e9;
-    for (int i = 0; i < r.getHeight(); i++)
+    int nb[][] = block[shape][direction];
+    for (int i = 0; i < r.getHeight(); i++) {
+      int ci = r.getY() + i;
       for (int j = 0; j < r.getWidth(); j++) {
-        int ci = r.getY() + i, cj = r.getX() + j;
-        if (board[ci][cj] == 9) {
+        int cj = r.getX() + j;
+        if (nb[i][j] == 1) {
           board[ci][cj] = shape;
 
           if (min > ci)
@@ -165,35 +166,45 @@ public class App {
             max = ci;
         }
       }
+    }
     return new Rectangle(0, min, 0, max - min + 1);
   }
 
-  static int chkAndDelLine(Rectangle r) {
-    int dis = 0;
+  static boolean chkAndDelLine(Rectangle r) {
+    boolean flag = false;
     for (int i = 0; i < r.getHeight(); i++) {
       int ci = r.getY() + i, j;
-      for (j = 0; j < W; j++) {
+      for (j = 0; j < W; j++)
         if (board[ci][j] == -1)
           break;
-      }
+
       // 한줄 가득 찼음
       if (j == W) {
-        dis++;
+        flag = true;
         for (j = 0; j < W; j++)
           board[ci][j] = -2;
       }
     }
-    return dis;
+    return flag;
   }
 
-  static void putDownBlock(Rectangle r, int dis) {
+  static void putDownBlock(Rectangle r) {
     for (int j = 0; j < W; j++) {
-      for (int i = r.getY() + r.getHeight() - 1; i >= 0; i--)
-        if (0 <= board[i][j] && board[i][j] < block.length) {
-          board[i + dis][j] = board[i][j];
-          board[i][j] = -1;
-        } else if (board[i][j] == -2)
-          board[i][j] = -1;
+      int p = r.getY() + r.getHeight();
+      while (p >= BLOCK_SIZE && board[--p][j] != -2);
+      int q = p + 1;
+      while (p >= BLOCK_SIZE) {
+        while (board[--q][j] == -2);
+        int diff = 0;
+        while (q - diff >= BLOCK_SIZE && board[q - diff][j] != -2) {
+          board[p][j] = board[q - diff][j];
+          board[q - diff][j] = -1;
+          p--;
+          diff++;
+        }
+        q -= diff;
+        p = q;
+      }
     }
   }
 
@@ -262,12 +273,13 @@ public class App {
   }
 
   static void down(Rectangle r) {
+    int nb[][] = block[shape][direction];
     // board 상태 변경
-    for (int j = 0; j < r.getWidth(); j++) {
-      int cj = r.getX() + j;
-      for (int i = r.getHeight() - 1; i >= 0; i--) {
-        int ci = r.getY() + i;
-        if (board[ci][cj] == 9) {
+    for (int i = r.getHeight() - 1; i >= 0; i--) {
+      int ci = r.getY() + i;
+      for (int j = 0; j < r.getWidth(); j++) {
+        int cj = r.getX() + j;
+        if (nb[i][j] == 1) {
           board[ci + 1][cj] = board[ci][cj];
           board[ci][cj] = -1;
         }
@@ -280,12 +292,13 @@ public class App {
   static void right(Rectangle r) {
     if (chkRightTouch(pos))
       return;
+    int nb[][] = block[shape][direction];
     // board 상태 변경
     for (int i = r.getHeight() - 1; i >= 0; i--) {
       int ci = r.getY() + i;
       for (int j = r.getWidth() - 1; j >= 0; j--) {
         int cj = r.getX() + j;
-        if (board[ci][cj] == 9) {
+        if (nb[i][j] == 1) {
           board[ci][cj + 1] = board[ci][cj];
           board[ci][cj] = -1;
         }
@@ -298,12 +311,13 @@ public class App {
   static void left(Rectangle r) {
     if (chkLeftTouch(r))
       return;
+    int nb[][] = block[shape][direction];
     // board 상태 변경
     for (int i = 0; i < r.getHeight(); i++) {
       int ci = r.getY() + i;
       for (int j = 0; j < r.getWidth(); j++) {
         int cj = r.getX() + j;
-        if (board[ci][cj] == 9) {
+        if (nb[i][j] == 1) {
           board[ci][cj - 1] = board[ci][cj];
           board[ci][cj] = -1;
         }
@@ -332,12 +346,12 @@ public class App {
   }
 
   static void fall(Rectangle r) {
-    int nb[][] = block[shape][direction], d = 0;
-
+    int d = 0;
     Rectangle nr = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight());
     while (!chkDownTouch(nr))
       nr.setY(r.getY() + ++d);
 
+    int nb[][] = block[shape][direction];
     for (int i = r.getHeight() - 1; i >= 0; i--) {
       int ci = r.getY() + i;
       for (int j = 0; j < r.getWidth(); j++) {
@@ -352,7 +366,6 @@ public class App {
   }
 
   static void render() {
-    Rectangle clip = new Rectangle(0, BLOCK_SIZE, W * 2, H);
     Toolkit.startPainting();
     for (int i = BLOCK_SIZE; i < H + BLOCK_SIZE; i++) {
       for (int j = 0; j < W; j++) {
